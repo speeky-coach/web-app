@@ -2,7 +2,10 @@ import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 const Layout = React.lazy(() => import('../layout/Layout'));
-const Home = React.lazy(() => import('../../contexts/coaching/home/Home'));
+const Home = React.lazy(() => import('../../contexts/home/Home'));
+const Conversations = React.lazy(
+  () => import('../../contexts/coaching/conversations/Conversations')
+);
 const Profile = React.lazy(
   () => import('../../contexts/account/profile/Profile')
 );
@@ -16,6 +19,7 @@ function Router() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="conversations" element={<Conversations />} />
           <Route path="profile" element={<Profile />} />
         </Route>
         <Route path="login" element={<Login />} />

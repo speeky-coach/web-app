@@ -3,7 +3,7 @@ import { User as FirebaseUser } from 'firebase/auth';
 import {
   loginWithGoogle,
   onFirebaseAuthStateChanged,
-} from '../../setup/firebase';
+} from '../../setup/firebase/authentication';
 import User from '../domain/User';
 import SessionContext, { SessionContextState } from './SessionContext';
 import sessionReducer, {
