@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link, Outlet } from 'react-router-dom';
+import { logout } from '../../setup/firebase';
+import SessionContext from '../store/SessionContext';
+import withSessionRequired from './withSessionRequired';
 
 function Layout() {
+  const { isLoading, user } = useContext(SessionContext);
+
+  const loading = isLoading ? <>loading...</> : null;
+
   return (
     <>
-      <header className="App-header">Speeky</header>
+      {loading}
+      <header className="App-header">Speeky, Hello {user?.name}</header>
       <nav>
         <Link to="/">Home</Link>
         {' | '}
@@ -12,10 +20,13 @@ function Layout() {
         {' | '}
         <Link to="/login">Login</Link>
       </nav>
-      <div>Private area 2</div>
+      <div>Private area</div>
+      <div>
+        <button onClick={logout}>Logout</button>
+      </div>
       <Outlet />
     </>
   );
 }
 
-export default Layout;
+export default withSessionRequired(Layout);

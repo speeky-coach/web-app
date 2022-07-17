@@ -1,14 +1,15 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import Router from './router/Router';
+import SessionContextProvider from './store/SessionContextProvider';
 
 function App() {
   return (
-    <div className="App">
+    <SessionContextProvider>
       <BrowserRouter>
         <Router />
       </BrowserRouter>
-    </div>
+    </SessionContextProvider>
   );
 }
 
