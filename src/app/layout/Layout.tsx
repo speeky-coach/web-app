@@ -24,6 +24,8 @@ function Layout() {
         {' | '}
         <Link to="/profile">Profile</Link>
         {' | '}
+        <Link to="/plans-and-pricing">Plans and pricing</Link>
+        {' | '}
         <Link to="/login">Login</Link>
       </nav>
       <div>Private area</div>
