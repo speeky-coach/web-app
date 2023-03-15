@@ -36,14 +36,27 @@ function NewConversation({}: NewConversationProps) {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
 
-      mediaRecorder.addEventListener('dataavailable', (event) => {
+      mediaRecorder.addEventListener('dataavailable', async (event) => {
         console.log('data available');
         console.log(event.data);
 
         chunks.push(event.data);
 
+        // Read the binary data from the Blob
+        const buffer = await event.data.arrayBuffer();
+        console.log('buffer', buffer);
+
+        // get data from buffer and convert to base64
+        const base64 = btoa(
+          new Uint8Array(buffer).reduce(
+            (data, byte) => data + String.fromCharCode(byte),
+            ''
+          )
+        );
+        console.log('base64', base64);
+
         const payload = {
-          data: event.data,
+          data: base64,
           userId: '123',
           conversationId: 'abc',
         };
