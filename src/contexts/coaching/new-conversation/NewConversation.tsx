@@ -1,5 +1,15 @@
 import React from 'react';
+// import mqtt from 'mqtt'
+// declare mqtt as a global variable
+// declare const mqtt: any;
+// declare mqtt as attribute of window that is included by https://unpkg.com/mqtt/dist/mqtt.min.js
+declare global {
+  interface Window {
+    mqtt: any;
+  }
+}
 
+let mqttClient: any | null = null;
 let stream: MediaStream | null = null;
 let mediaRecorder: MediaRecorder | null = null;
 
@@ -14,6 +24,15 @@ function NewConversation({}: NewConversationProps) {
 
   async function startRecording() {
     try {
+      const options = {
+        clean: true, // retain session
+        connectTimeout: 4000, // Timeout period
+        // Authentication information
+        clientId: 'speeky_user_1',
+        username: 'speeky_user_1',
+      };
+
+      mqttClient = window.mqtt.connect('ws://localhost:8083/mqtt', options);
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
 
@@ -22,9 +41,17 @@ function NewConversation({}: NewConversationProps) {
         console.log(event.data);
 
         chunks.push(event.data);
+
+        const payload = {
+          data: event.data,
+          userId: '123',
+          conversationId: 'abc',
+        };
+
+        mqttClient?.publish('audio', JSON.stringify(payload));
       });
 
-      mediaRecorder.start(1000);
+      mediaRecorder.start(2000);
 
       setRecording(true);
     } catch (err) {
@@ -33,28 +60,22 @@ function NewConversation({}: NewConversationProps) {
   }
 
   async function stopRecording() {
-    if (!stream) return;
+    if (stream) {
+      const tracks = stream.getTracks();
 
-    const tracks = stream.getTracks();
+      tracks.forEach((track) => {
+        track.stop();
+      });
+    }
 
-    tracks.forEach((track) => {
-      track.stop();
-    });
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+    }
 
-    if (!mediaRecorder) return;
+    if (mqttClient) {
+      mqttClient.end();
+    }
 
-    mediaRecorder.stop();
-
-    const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'recorded-audio.webm';
-    link.click();
-    URL.revokeObjectURL(url);
-
-    console.log('blob', blob);
     console.log('chunks', chunks);
 
     chunks = [];

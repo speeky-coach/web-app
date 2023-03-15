@@ -25,6 +25,7 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
+    <script src="https://unpkg.com/mqtt@4.0.1/dist/mqtt.js"></script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -42,6 +43,10 @@
     <script src="https://checkout.culqi.com/js/v4"></script>
     <script>
       Culqi.publicKey = 'pk_test_hQTx331DP1z9J5Er';
+    </script>
+    <script>
+      // Globally initializes an mqtt variable
+      console.log(mqtt);
     </script>
   </body>
 </html>
