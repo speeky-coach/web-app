@@ -1,30 +1,9 @@
 import React from 'react';
-import axios, { AxiosInstance } from 'axios';
 
 let stream: MediaStream | null = null;
-let audioContext: AudioContext | null = null;
-let input: MediaStreamAudioSourceNode | null = null;
-const workletUrl = '/js/worklet.js';
-let workletNode: AudioWorkletNode | null = null;
+let mediaRecorder: MediaRecorder | null = null;
 
 let chunks: any[] = [];
-
-let client: AxiosInstance | null = null;
-
-function sendChunksToServer() {
-  /* 
-  transform this into a stream and send it to the server using axios
-  let formData = new FormData();
-  for (let i = 0; i < chunks.length; i++) {
-    formData.append('audio[]', chunks[i]);
-  }
-  xhr.send(formData); */
-  if (!client) return;
-
-  client.post('/coaching/conversations', chunks);
-
-  chunks = [];
-}
 
 interface NewConversationProps {}
 
@@ -36,32 +15,16 @@ function NewConversation({}: NewConversationProps) {
   async function startRecording() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioContext = new AudioContext();
-      input = audioContext.createMediaStreamSource(stream);
+      mediaRecorder = new MediaRecorder(stream);
 
-      await audioContext.audioWorklet.addModule(workletUrl);
-      workletNode = new AudioWorkletNode(audioContext, 'my-worklet-processor');
-      workletNode.port.onmessage = (event) => {
-        console.log('message', event.data);
+      mediaRecorder.addEventListener('dataavailable', (event) => {
+        console.log('data available');
+        console.log(event.data);
 
-        let pcmEncodedData = event.data.buffer;
-        chunks.push(pcmEncodedData);
-        if (chunks.length >= 10) {
-          sendChunksToServer();
-        }
-      };
-
-      input.connect(workletNode);
-      workletNode.connect(audioContext.destination);
-
-      // set client as axios instance that will send the audio data to the server as stream
-      client = axios.create({
-        baseURL: 'http://localhost:4000',
-        headers: {
-          'Content-Type': 'audio/wav',
-        },
-        responseType: 'stream',
+        chunks.push(event.data);
       });
+
+      mediaRecorder.start(1000);
 
       setRecording(true);
     } catch (err) {
@@ -72,11 +35,29 @@ function NewConversation({}: NewConversationProps) {
   async function stopRecording() {
     if (!stream) return;
 
-    stream.getTracks().forEach((track) => track.stop());
+    const tracks = stream.getTracks();
 
-    if (!workletNode) return;
+    tracks.forEach((track) => {
+      track.stop();
+    });
 
-    workletNode.port.postMessage('stop');
+    if (!mediaRecorder) return;
+
+    mediaRecorder.stop();
+
+    const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'recorded-audio.webm';
+    link.click();
+    URL.revokeObjectURL(url);
+
+    console.log('blob', blob);
+    console.log('chunks', chunks);
+
+    chunks = [];
 
     setRecording(false);
   }
