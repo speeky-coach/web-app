@@ -44,7 +44,6 @@ function NewConversation({}: NewConversationProps) {
 
         // Read the binary data from the Blob
         const buffer = await event.data.arrayBuffer();
-        console.log('buffer', buffer);
 
         // get data from buffer and convert to base64
         const base64 = btoa(
@@ -53,15 +52,25 @@ function NewConversation({}: NewConversationProps) {
             ''
           )
         );
-        console.log('base64', base64);
 
         const payload = {
           data: base64,
           userId: '123',
           conversationId: 'abc',
+          status: 'in-progress',
         };
 
-        mqttClient?.publish('audio', JSON.stringify(payload));
+        mqttClient?.publish('audio/upload', JSON.stringify(payload));
+      });
+
+      mediaRecorder.addEventListener('stop', () => {
+        console.log('stop');
+
+        console.log('chunks', chunks);
+
+        chunks = [];
+
+        mqttClient?.end();
       });
 
       mediaRecorder.start(2000);
@@ -75,6 +84,7 @@ function NewConversation({}: NewConversationProps) {
   async function stopRecording() {
     if (stream) {
       const tracks = stream.getTracks();
+      console.log('tracks', tracks);
 
       tracks.forEach((track) => {
         track.stop();
@@ -85,13 +95,13 @@ function NewConversation({}: NewConversationProps) {
       mediaRecorder.stop();
     }
 
-    if (mqttClient) {
-      mqttClient.end();
-    }
+    const payload = {
+      userId: '123',
+      conversationId: 'abc',
+      status: 'stopped',
+    };
 
-    console.log('chunks', chunks);
-
-    chunks = [];
+    mqttClient?.publish('audio/end', JSON.stringify(payload));
 
     setRecording(false);
   }
