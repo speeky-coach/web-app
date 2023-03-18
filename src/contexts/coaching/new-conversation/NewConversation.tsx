@@ -1,15 +1,20 @@
 import React from 'react';
-// import mqtt from 'mqtt'
-// declare mqtt as a global variable
-// declare const mqtt: any;
-// declare mqtt as attribute of window that is included by https://unpkg.com/mqtt/dist/mqtt.min.js
-declare global {
-  interface Window {
-    mqtt: any;
-  }
-}
+import { io } from 'socket.io-client';
 
-let mqttClient: any | null = null;
+const socket = io('http://localhost:4000');
+
+socket.on('connect', () => {
+  console.log(socket.id);
+});
+
+socket.on('data', () => {
+  // ...
+});
+
+socket.on('disconnect', (reason) => {
+  // ...
+});
+
 let stream: MediaStream | null = null;
 let mediaRecorder: MediaRecorder | null = null;
 
@@ -24,17 +29,16 @@ function NewConversation({}: NewConversationProps) {
 
   async function startRecording() {
     try {
-      const options = {
-        clean: true, // retain session
-        connectTimeout: 4000, // Timeout period
-        // Authentication information
-        clientId: 'speeky_user_1',
-        username: 'speeky_user_1',
-      };
-
-      mqttClient = window.mqtt.connect('ws://localhost:8083/mqtt', options);
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
+
+      const payload = {
+        userId: '123',
+        conversationId: 'abc',
+        status: 'started',
+      };
+
+      socket.emit('new-conversation-started', payload);
 
       mediaRecorder.addEventListener('dataavailable', async (event) => {
         console.log('data available');
@@ -42,25 +46,14 @@ function NewConversation({}: NewConversationProps) {
 
         chunks.push(event.data);
 
-        // Read the binary data from the Blob
-        const buffer = await event.data.arrayBuffer();
-
-        // get data from buffer and convert to base64
-        const base64 = btoa(
-          new Uint8Array(buffer).reduce(
-            (data, byte) => data + String.fromCharCode(byte),
-            ''
-          )
-        );
-
         const payload = {
-          data: base64,
+          data: event.data,
           userId: '123',
           conversationId: 'abc',
           status: 'in-progress',
         };
 
-        mqttClient?.publish('audio/upload', JSON.stringify(payload));
+        socket.emit('new-conversation-in-progress', payload);
       });
 
       mediaRecorder.addEventListener('stop', () => {
@@ -70,7 +63,13 @@ function NewConversation({}: NewConversationProps) {
 
         chunks = [];
 
-        mqttClient?.end();
+        const payload = {
+          userId: '123',
+          conversationId: 'abc',
+          status: 'stopped',
+        };
+
+        socket.emit('new-conversation-stopped', payload);
       });
 
       mediaRecorder.start(2000);
@@ -94,14 +93,6 @@ function NewConversation({}: NewConversationProps) {
     if (mediaRecorder) {
       mediaRecorder.stop();
     }
-
-    const payload = {
-      userId: '123',
-      conversationId: 'abc',
-      status: 'stopped',
-    };
-
-    mqttClient?.publish('audio/end', JSON.stringify(payload));
 
     setRecording(false);
   }
