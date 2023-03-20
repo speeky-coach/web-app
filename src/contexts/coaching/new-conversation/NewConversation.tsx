@@ -35,7 +35,6 @@ function NewConversation({}: NewConversationProps) {
       const payload = {
         userId: '123',
         conversationId: 'abc',
-        status: 'started',
       };
 
       socket.emit('new-conversation-started', payload);
@@ -50,7 +49,6 @@ function NewConversation({}: NewConversationProps) {
           data: event.data,
           userId: '123',
           conversationId: 'abc',
-          status: 'in-progress',
         };
 
         socket.emit('new-conversation-in-progress', payload);
@@ -66,7 +64,6 @@ function NewConversation({}: NewConversationProps) {
         const payload = {
           userId: '123',
           conversationId: 'abc',
-          status: 'stopped',
         };
 
         socket.emit('new-conversation-stopped', payload);
